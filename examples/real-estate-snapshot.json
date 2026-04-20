@@ -1,0 +1,142 @@
+{
+  "_comment": "CORD Example: Real Estate Buyer Qualification — Snapshot Envelope",
+  "envelope_id": "env_re_01J9X2K4M8N3P5Q7R0S6T",
+  "envelope_type": "snapshot",
+  "schema_version": "1.0.0",
+  "created_at": "2026-01-15T10:32:00Z",
+  "tenant_id": "tenant_summit_realty",
+  "channel": "web_chat",
+  "subject": {
+    "subject_id": "subj_re_3847",
+    "fields": [
+      {
+        "field_name": "buyer_full_name",
+        "field_value": "Alex Chen",
+        "field_type": "string",
+        "confidence": 1.0,
+        "extraction_source": "subject_provided",
+        "extracted_at": "2026-01-15T10:28:00Z"
+      },
+      {
+        "field_name": "budget_range",
+        "field_value": {
+          "min": 520000,
+          "max": 650000,
+          "currency": "USD",
+          "financing": "mortgage",
+          "down_payment_percent": 20
+        },
+        "field_type": "object",
+        "confidence": 0.96,
+        "extraction_source": "subject_provided",
+        "extracted_at": "2026-01-15T10:28:45Z"
+      },
+      {
+        "field_name": "neighborhood_preferences",
+        "field_value": ["Maplewood", "Riverdale Heights", "Old Town", "Westside Commons", "Lakeview"],
+        "field_type": "array",
+        "confidence": 0.93,
+        "extraction_source": "ml_inference",
+        "extracted_at": "2026-01-15T10:29:30Z"
+      },
+      {
+        "field_name": "school_district_requirements",
+        "field_value": ["Lincoln Unified", "Jefferson Elementary rated 8+", "within 2 miles of elementary"],
+        "field_type": "array",
+        "confidence": 0.91,
+        "extraction_source": "ml_inference",
+        "extracted_at": "2026-01-15T10:30:00Z"
+      },
+      {
+        "field_name": "commute_parameters",
+        "field_value": {
+          "workplace_address": "Downtown Financial District",
+          "max_commute_minutes": 35,
+          "preferred_mode": "drive",
+          "acceptable_modes": ["drive", "light_rail"]
+        },
+        "field_type": "object",
+        "confidence": 0.88,
+        "extraction_source": "ml_inference",
+        "extracted_at": "2026-01-15T10:30:30Z"
+      },
+      {
+        "field_name": "required_features",
+        "field_value": [
+          "minimum 3 bedrooms",
+          "2+ bathrooms",
+          "home office space",
+          "2-car garage",
+          "backyard",
+          "updated kitchen",
+          "no HOA or low HOA",
+          "move-in ready",
+          "single story preferred"
+        ],
+        "field_type": "array",
+        "confidence": 0.95,
+        "extraction_source": "ml_inference",
+        "extracted_at": "2026-01-15T10:31:00Z"
+      },
+      {
+        "field_name": "dealbreakers",
+        "field_value": ["busy street frontage", "below grade master bedroom", "shared driveway", "no natural light"],
+        "field_type": "array",
+        "confidence": 0.87,
+        "extraction_source": "ml_inference",
+        "extracted_at": "2026-01-15T10:31:30Z"
+      }
+    ],
+    "contact": {
+      "phone": "+1-555-0219",
+      "email": "alex.chen@example.com",
+      "name": "Alex Chen"
+    }
+  },
+  "lifecycle_stage": "INQUIRY",
+  "prospect_score": {
+    "score": 63,
+    "tier": "WARM",
+    "computed_at": "2026-01-15T10:31:55Z",
+    "factor_count": 5
+  },
+  "events": [
+    {
+      "event_id": "evt_re_001",
+      "event_type": "lifecycle_transition",
+      "occurred_at": "2026-01-15T10:28:30Z",
+      "data": {
+        "from_stage": "NEW",
+        "to_stage": "INQUIRY",
+        "triggering_intent": "property_search_initiated"
+      }
+    },
+    {
+      "event_id": "evt_re_002",
+      "event_type": "score_changed",
+      "occurred_at": "2026-01-15T10:31:55Z",
+      "data": {
+        "previous_score": 0,
+        "new_score": 63,
+        "previous_tier": null,
+        "new_tier": "WARM",
+        "factor_count": 5
+      }
+    }
+  ],
+  "efs": {
+    "score": 0.26,
+    "computed_at": "2026-01-15T10:32:05Z",
+    "target_format": "mls_lead_form_v1",
+    "field_count_source": 7,
+    "field_count_full_mapping": 2,
+    "field_count_partial_mapping": 1,
+    "field_count_no_mapping": 4,
+    "severity_summary": {
+      "critical": 3,
+      "warning": 3,
+      "informational": 1
+    },
+    "note": "73.6% of weighted buyer preference information is destroyed when compressing to MLS lead form. Budget structure, neighborhood detail, school requirements, commute parameters, and dealbreakers are not representable."
+  }
+}

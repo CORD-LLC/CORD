@@ -1,0 +1,70 @@
+{
+  "_comment": "CORD Example: Delta Envelope — Lifecycle transition from INQUIRY to QUALIFIED",
+  "_note": "This delta references the real-estate snapshot. Only changed fields are included.",
+  "envelope_id": "env_re_02J9X3L5N9P4Q8R1S7T",
+  "envelope_type": "delta",
+  "parent_envelope_id": "env_re_01J9X2K4M8N3P5Q7R0S6T",
+  "schema_version": "1.0.0",
+  "created_at": "2026-01-15T10:55:00Z",
+  "tenant_id": "tenant_summit_realty",
+  "channel": "web_chat",
+  "subject": {
+    "subject_id": "subj_re_3847",
+    "fields": [
+      {
+        "field_name": "preapproval_status",
+        "field_value": {
+          "status": "pre_approved",
+          "lender": "First National Mortgage",
+          "approval_amount": 650000,
+          "rate_locked": false,
+          "expiry_date": "2026-03-01"
+        },
+        "field_type": "object",
+        "confidence": 0.98,
+        "extraction_source": "subject_provided",
+        "extracted_at": "2026-01-15T10:54:20Z"
+      },
+      {
+        "field_name": "timeline",
+        "field_value": "within_60_days",
+        "field_type": "enum",
+        "confidence": 0.95,
+        "extraction_source": "ml_inference",
+        "extracted_at": "2026-01-15T10:54:45Z"
+      }
+    ]
+  },
+  "lifecycle_stage": "QUALIFIED",
+  "prospect_score": {
+    "score": 81,
+    "tier": "HOT",
+    "computed_at": "2026-01-15T10:54:55Z",
+    "factor_count": 7
+  },
+  "events": [
+    {
+      "event_id": "evt_re_003",
+      "event_type": "lifecycle_transition",
+      "occurred_at": "2026-01-15T10:54:50Z",
+      "data": {
+        "from_stage": "INQUIRY",
+        "to_stage": "QUALIFIED",
+        "triggering_intent": "preapproval_confirmed_and_timeline_stated"
+      }
+    },
+    {
+      "event_id": "evt_re_004",
+      "event_type": "score_changed",
+      "occurred_at": "2026-01-15T10:54:55Z",
+      "data": {
+        "previous_score": 63,
+        "new_score": 81,
+        "previous_tier": "WARM",
+        "new_tier": "HOT",
+        "factor_count": 7
+      }
+    }
+  ],
+  "efs": null
+}

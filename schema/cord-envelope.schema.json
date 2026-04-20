@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cordspec.org/schema/v1.0.0/cord-envelope.schema.json",
+  "title": "CORD Envelope",
+  "description": "Canonical structured interaction envelope for the CORD protocol (application/cord+json)",
+  "type": "object",
+  "required": ["envelope_id", "envelope_type", "schema_version", "created_at", "tenant_id", "channel", "subject", "lifecycle_stage", "events"],
+  "properties": {
+    "envelope_id": {
+      "type": "string",
+      "description": "Globally unique identifier for this envelope version"
+    },
+    "envelope_type": {
+      "type": "string",
+      "enum": ["snapshot", "delta"],
+      "description": "Snapshot envelopes contain full state. Delta envelopes contain only changed fields."
+    },
+    "parent_envelope_id": {
+      "type": "string",
+      "description": "Required when envelope_type is 'delta'. References the immediately preceding envelope version."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "CORD schema version (semver)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of envelope creation"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Identifier of the receiving entity tenant"
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["text_messaging", "voice", "web_chat", "web_form", "email", "api"],
+      "description": "Input channel through which the subject interaction was received"
+    },
+    "subject": {
+      "type": "object",
+      "description": "Subject interaction data",
+      "required": ["fields"],
+      "properties": {
+        "subject_id": {
+          "type": "string",
+          "description": "Canonical subject identifier (assigned after identity resolution)"
+        },
+        "fields": {
+          "type": "array",
+          "description": "Structured fields extracted from the subject interaction",
+          "items": {
+            "$ref": "#/$defs/Field"
+          }
+        },
+        "contact": {
+          "type": "object",
+          "description": "Contact identifiers for the subject",
+          "properties": {
+            "phone": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "name": { "type": "string" }
+          }
+        }
+      }
+    },
+    "lifecycle_stage": {
+      "type": "string",
+      "enum": ["NEW", "INQUIRY", "QUALIFIED", "NEGOTIATION", "CLOSED"],
+      "description": "Current interaction lifecycle stage"
+    },
+    "prospect_score": {
+      "type": "object",
+      "description": "Prospect scoring data",
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["COLD", "INTERESTED", "WARM", "HOT"]
+        },
+        "computed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "factor_count": {
+          "type": "integer",
+          "description": "Number of factors contributing to this score"
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "description": "Append-only event log. Events are never modified or deleted.",
+      "items": {
+        "$ref": "#/$defs/Event"
+      }
+    },
+    "efs": {
+      "$ref": "#/$defs/EFSRecord"
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Domain-specific extension fields. Must not conflict with reserved top-level field names."
+    }
+  },
+  "if": {
+    "properties": { "envelope_type": { "const": "delta" } }
+  },
+  "then": {
+    "required": ["parent_envelope_id"]
+  },
+  "$defs": {
+    "Field": {
+      "type": "object",
+      "required": ["field_name", "field_value", "field_type", "confidence", "extraction_source", "extracted_at"],
+      "properties": {
+        "field_name": {
+          "type": "string",
+          "description": "Field identifier. Domain-specific vocabulary."
+        },
+        "field_value": {
+          "description": "Extracted field value. May be string, number, boolean, array, or object."
+        },
+        "field_type": {
+          "type": "string",
+          "enum": ["string", "number", "boolean", "enum", "array", "object", "range"],
+          "description": "Declared type of the field value"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Extraction confidence score. Fields below tenant threshold should be flagged for review."
+        },
+        "extraction_source": {
+          "type": "string",
+          "enum": ["rule_based", "ml_inference", "hybrid", "subject_provided"],
+          "description": "Method used to extract this field"
+        },
+        "extracted_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of extraction"
+        },
+        "review_required": {
+          "type": "boolean",
+          "description": "True if confidence is below the tenant threshold"
+        }
+      }
+    },
+    "Event": {
+      "type": "object",
+      "required": ["event_id", "event_type", "occurred_at"],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "description": "Unique identifier for this event"
+        },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "field_extracted",
+            "lifecycle_transition",
+            "score_changed",
+            "escalation_triggered",
+            "identity_merged",
+            "legacy_transmission",
+            "canonical_import"
+          ]
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "description": "Event-specific payload"
+        }
+      }
+    },
+    "EFSRecord": {
+      "type": "object",
+      "description": "Envelope Fidelity Score record attached at legacy transmission time",
+      "properties": {
+        "score": {
+          "type": ["number", "null"],
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Aggregate EFS (0.0 = total loss, 1.0 = perfect fidelity)"
+        },
+        "computed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "target_format": {
+          "type": "string",
+          "description": "Identifier of the legacy target format"
+        },
+        "field_count_source": {
+          "type": "integer",
+          "description": "Total fields in source envelope"
+        },
+        "field_count_full_mapping": {
+          "type": "integer",
+          "description": "Fields with full mapping in target format"
+        },
+        "field_count_partial_mapping": {
+          "type": "integer",
+          "description": "Fields with partial mapping in target format"
+        },
+        "field_count_no_mapping": {
+          "type": "integer",
+          "description": "Fields with no mapping in target format"
+        },
+        "severity_summary": {
+          "type": "object",
+          "properties": {
+            "critical": { "type": "integer" },
+            "warning": { "type": "integer" },
+            "informational": { "type": "integer" }
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
