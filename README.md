@@ -1,160 +1,97 @@
 # CORD — Canonical Object for Relational Data
 
-**An open protocol standard for AI-generated interaction data.**
+**The open protocol for preserving AI-generated data across systems.**
 
-CORD defines how conversational AI agents structure, version, and transmit interaction data — and how to measure what gets lost when that data is translated into legacy systems.
+CORD sits between AI systems and legacy software, ensuring structured data is preserved, translated, and measurable across every interaction.
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Spec Version](https://img.shields.io/badge/spec-v1.0.0-green.svg)](docs/spec.md)
-[![Media Type](https://img.shields.io/badge/media%20type-application%2Fcord%2Bjson-orange.svg)](docs/spec.md#media-type)
+[![Spec](https://img.shields.io/badge/spec-v1.0-2563eb)](https://cordspec.org)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
+[![Try It](https://img.shields.io/badge/tester-live-16a34a)](https://cordspec.org/tester)
 
----
+## What CORD does
 
-## The Problem
+AI systems extract rich, structured data. Legacy systems — CRMs, EHRs, DMSs, ATSs — compress it into flat schemas. Information is silently lost. CORD makes that loss visible, measurable, and auditable.
 
-Every day, AI agents collect rich, structured interaction data — typed fields, arrays, confidence scores, intent classifications, conversation histories. Then they hand that data off to legacy systems: CRMs, EHRs, ATS platforms, case management tools.
+Every CORD envelope contains:
 
-Those legacy systems were built before AI. They don't understand typed enumerations, arrays, or confidence scores. They have a text field. Maybe two.
+- **Full-fidelity fields** — everything the AI extracted, with confidence scores and source attribution
+- **Legacy output** — the flat representation that actually gets written to the downstream system
+- **Loss report** — per-field mapping status (FULL / PARTIAL / NONE) and an Envelope Fidelity Score (EFS)
+- **Integrity** — SHA-256 digest for tamper detection without external signing infrastructure
 
-**The data gets compressed. Information is destroyed. Nobody measures it.**
+## Envelope Fidelity Score (EFS)
 
-CORD fixes that.
+EFS is a normalized metric on [0.0, 1.0] that quantifies how much information survives translation.
 
----
+```
+EFS = Σ(weight × coefficient) / Σ(weight)
 
-## What CORD Does
+FULL    → 1.0
+PARTIAL → [0.5, 0.9] based on confidence propagation
+NONE    → 0.0
+```
 
-CORD is a protocol standard that defines:
+An EFS of 0.63 means 37% of the structured data the AI extracted was lost in translation.
 
-1. **A canonical envelope format** — a structured, versioned container for AI-generated interaction data, serialized as `application/cord+json`
-2. **Snapshot and delta versioning** — every interaction state is preserved, reconstructable, and auditable
-3. **Dual-format output** — full-fidelity CORD output alongside legacy-compatible output, simultaneously
-4. **The Envelope Fidelity Score (EFS)** — a normalized metric (0.0–1.0) quantifying information loss during format conversion, comparable across systems and industries
-5. **Conformance tiers** — a certification framework so receiving systems can declare their CORD compliance level
-
----
-
-## Who CORD Is For
-
-CORD is domain-agnostic. It applies anywhere AI agents collect structured data for transmission to legacy-format receiving systems:
-
-| Industry | AI Agent | Legacy Receiving System |
-|---|---|---|
-| Healthcare | Telehealth intake agent | HL7 v2 ADT / fax referral |
-| Real Estate | Buyer qualification agent | MLS lead form |
-| Insurance | Claims intake agent | ACORD form |
-| Legal | Client intake agent | Case management system |
-| Financial Services | Wealth management agent | CRM contact record |
-| HR / Talent | Candidate screening agent | ATS import record |
-| Government | Benefits intake agent | Legacy case management |
-| Automotive | Sales AI agent | CRM / DMS lead record |
-
----
-
-## Quick Start
-
-### A minimal CORD envelope
+## Quick example
 
 ```json
 {
-  "envelope_id": "env_01J9X2K4M8N3P5Q7R0S6T",
+  "cord_version": "1.0",
+  "envelope_id": "a3f9c201-7d42-4b1a-9e0f-2c88d3f5ab01",
   "envelope_type": "snapshot",
-  "schema_version": "1.0.0",
-  "created_at": "2026-01-15T14:32:00Z",
-  "tenant_id": "tenant_abc123",
-  "channel": "web_chat",
-  "subject": {
-    "fields": [
-      {
-        "field_name": "full_name",
-        "field_value": "Jordan Rivera",
-        "field_type": "string",
-        "confidence": 1.0,
-        "extraction_source": "rule_based"
-      },
-      {
-        "field_name": "intent_classification",
-        "field_value": "purchase_inquiry",
-        "field_type": "enum",
-        "confidence": 0.91,
-        "extraction_source": "ml_inference"
-      }
+  "version": 1,
+  "parent_envelope_id": null,
+  "created_at": "2025-09-14T10:22:00Z",
+  "domain": "healthcare",
+  "source_system": "intake-ai-v2",
+  "target_system": "epic-ehr-adapter",
+  "fields": [
+    { "name": "chief_complaint", "value": "chest pain, onset 3h, radiating to left arm", "type": "text", "confidence": 0.97, "source": "nlp" },
+    { "name": "icd10_codes", "value": ["R07.9", "R07.4", "I20.9"], "type": "code_array", "confidence": 0.84, "source": "classifier" },
+    { "name": "pain_score", "value": 7, "type": "integer", "confidence": 0.92, "source": "nlp" }
+  ],
+  "legacy_output": {
+    "chief_complaint": "chest pain",
+    "icd10_primary": "R07.9",
+    "pain_score": "7"
+  },
+  "loss_report": {
+    "efs": 0.61,
+    "field_mappings": [
+      { "field": "chief_complaint", "status": "PARTIAL", "partial_coefficient": 0.5, "note": "Onset and radiation detail truncated" },
+      { "field": "icd10_codes", "status": "PARTIAL", "partial_coefficient": 0.62, "note": "Primary code only; 2 of 3 lost" },
+      { "field": "pain_score", "status": "FULL", "note": "Value preserved; type coerced to string" }
     ]
   },
-  "lifecycle_stage": "QUALIFIED",
-  "events": [],
-  "efs": {
-    "score": null,
-    "computed_at": null,
-    "note": "EFS computed at transmission time against target legacy format"
-  }
+  "x_cord_digest": "sha256:e4a7c3f901b2d844a1e09f3bc20d1847..."
 }
 ```
 
-See [`examples/`](examples/) for full envelope examples across multiple industries.
-
----
-
-## Repository Structure
-
-```
-cord-spec/
-├── README.md                  ← You are here
-├── LICENSE                    ← Apache 2.0
-├── CHANGELOG.md               ← Version history
-├── docs/
-│   ├── spec.md                ← Full CORD protocol specification
-│   └── efs.md                 ← Envelope Fidelity Score reference
-├── schema/
-│   └── cord-envelope.schema.json   ← JSON Schema for envelope validation
-├── conformance/
-│   └── conformance-tiers.md   ← CORD conformance tier definitions
-└── examples/
-    ├── healthcare-snapshot.json
-    ├── real-estate-snapshot.json
-    ├── hr-screening-snapshot.json
-    └── delta-example.json
-```
-
----
-
-## The Envelope Fidelity Score
-
-The EFS is a normalized score between **0.0** (total information loss) and **1.0** (perfect fidelity) that quantifies what is destroyed when a CORD envelope is converted to a legacy format.
-
-EFS values are **cross-system comparable**. An EFS of 0.19 means the same thing whether the legacy system is an HL7 v2 message, a Salesforce lead record, or an ACORD form.
-
-Example EFS benchmarks observed across industries:
-
-| Legacy Format | Typical EFS | Information Lost |
-|---|---|---|
-| HL7 v2 ADT (telehealth) | ~0.19 | ~81% |
-| MLS lead form (real estate) | ~0.26 | ~74% |
-| ACORD form (insurance claims) | ~0.15 | ~85% |
-| ATS import record (HR) | ~0.23 | ~77% |
-| CRM contact record (financial) | ~0.23 | ~77% |
-
-> The EFS computation method is defined in the CORD certified implementation specification. See [`docs/efs.md`](docs/efs.md).
-
----
-
 ## Conformance
 
-CORD defines three conformance tiers for receiving systems and implementations. See [`conformance/conformance-tiers.md`](conformance/conformance-tiers.md).
+CORD defines four conformance tiers based on three validation categories:
 
----
+| Category | Validates |
+|---|---|
+| Envelope Structure | Required fields, types, snapshot/delta rules |
+| EFS Reporting | loss_report with valid EFS and field_mappings |
+| Mapping Completeness | Every source field has a mapping entry |
+
+| Tier | Requirement |
+|---|---|
+| **CORD-Compliant** | All three categories pass; event log and notes present |
+| **CORD-Partial** | Categories 2+3 pass; may omit event log or notes |
+| **CORD-Compatible** | Core envelope fields without full EFS |
+| **Non-Compliant** | No CORD envelope produced |
+
+## Resources
+
+- **Specification**: [cordspec.org](https://cordspec.org)
+- **Live Tester**: [cordspec.org/tester](https://cordspec.org/tester)
+- **Reference Engine**: [cord-engine](https://github.com/CORD-LLC/cord-engine)
+- **Migration Skill**: See [`/skill`](skill/) for Claude Code integration
 
 ## License
 
-CORD is published under the [Apache License 2.0](LICENSE). The protocol specification, schema, and examples are free to implement and build upon.
-
-The `application/cord+json` media type is submitted for IANA registration.
-
----
-
-## Contributing
-
-CORD is maintained by CORD Protocol Holdings LLC. Contributions, issue reports, and implementation feedback are welcome via GitHub Issues and Pull Requests.
-
-**Website:** [cordspec.org](https://cordspec.org)
-**Contact:** hello@cordspec.org
+Apache 2.0 — see [LICENSE](LICENSE).
