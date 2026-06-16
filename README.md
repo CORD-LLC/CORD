@@ -49,19 +49,24 @@ An EFS of 0.63 means 37% of the structured data the AI extracted was lost in tra
   "fields": [
     { "name": "chief_complaint", "value": "chest pain, onset 3h, radiating to left arm", "type": "text", "confidence": 0.97, "source": "nlp" },
     { "name": "icd10_codes", "value": ["R07.9", "R07.4", "I20.9"], "type": "code_array", "confidence": 0.84, "source": "classifier" },
-    { "name": "pain_score", "value": 7, "type": "integer", "confidence": 0.92, "source": "nlp" }
+    { "name": "pain_score", "value": 7, "type": "integer", "confidence": 0.92, "source": "nlp" },
+    { "name": "allergy_list", "value": ["penicillin", "sulfa"], "type": "text_array", "confidence": 0.99, "source": "nlp" },
+    { "name": "prior_diagnoses", "value": ["hypertension", "type 2 diabetes"], "type": "text_array", "confidence": 0.90, "source": "nlp" }
   ],
   "legacy_output": {
     "chief_complaint": "chest pain",
     "icd10_primary": "R07.9",
-    "pain_score": "7"
+    "pain_score": "7",
+    "allergies": "penicillin, sulfa"
   },
   "loss_report": {
     "efs": 0.61,
     "field_mappings": [
       { "field": "chief_complaint", "status": "PARTIAL", "partial_coefficient": 0.5, "note": "Onset and radiation detail truncated" },
-      { "field": "icd10_codes", "status": "PARTIAL", "partial_coefficient": 0.62, "note": "Primary code only; 2 of 3 lost" },
-      { "field": "pain_score", "status": "FULL", "note": "Value preserved; type coerced to string" }
+      { "field": "icd10_codes", "status": "PARTIAL", "partial_coefficient": 0.55, "note": "Primary code only; 2 of 3 lost" },
+      { "field": "pain_score", "status": "FULL", "note": "Value preserved; type coerced to string" },
+      { "field": "allergy_list", "status": "FULL", "note": "Array flattened to comma-separated string; all items preserved" },
+      { "field": "prior_diagnoses", "status": "NONE", "note": "No corresponding field in target EHR schema" }
     ]
   },
   "x_cord_digest": "sha256:e4a7c3f901b2d844a1e09f3bc20d1847..."
